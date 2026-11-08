@@ -4,8 +4,8 @@ import android.graphics.Bitmap
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,15 +18,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.animation.core.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import com.journeyapps.barcodescanner.ScanContract
@@ -55,7 +58,60 @@ data class Holding(val symbol: String, val name: String, val amount: Double, val
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { YhccApp() }
+        setContent { YhccLaunchGate() }
+    }
+}
+
+@Composable
+private fun YhccLaunchGate() {
+    var showSplash by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        delay(3000)
+        showSplash = false
+    }
+    if (showSplash) YhccSplash() else YhccApp()
+}
+
+@Composable
+private fun YhccSplash() {
+    val transition = rememberInfiniteTransition(label = "yhcc-splash")
+    val rotation by transition.animateFloat(
+        initialValue = 0f, targetValue = 360f,
+        animationSpec = infiniteRepeatable(tween(5200, easing = LinearEasing)), label = "ring-rotation"
+    )
+    val pulse by transition.animateFloat(
+        initialValue = 0.94f, targetValue = 1.04f,
+        animationSpec = infiniteRepeatable(tween(1100, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "logo-pulse"
+    )
+    var entered by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { entered = true }
+    val alpha by animateFloatAsState(if (entered) 1f else 0f, tween(900), label = "splash-fade")
+    Box(
+        Modifier.fillMaxSize().background(Bg),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Box(Modifier.size(292.dp), contentAlignment = Alignment.Center) {
+                Box(Modifier.fillMaxSize().graphicsLayer { rotationZ = rotation }.border(1.dp, Gold.copy(alpha = 0.75f), CircleShape))
+                Box(Modifier.size(270.dp).graphicsLayer { rotationZ = -rotation * 0.55f }.border(1.dp, GoldBright.copy(alpha = 0.28f), CircleShape))
+                Image(
+                    painter = painterResource(id = R.drawable.yhcc_wallet_logo),
+                    contentDescription = "YHCC WALLET 3.0",
+                    modifier = Modifier.size(248.dp).graphicsLayer { scaleX = pulse; scaleY = pulse; this.alpha = alpha },
+                )
+            }
+            Spacer(Modifier.height(28.dp))
+            Text("YHCC WALLET", color = GoldBright, fontSize = 23.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp)
+            Spacer(Modifier.height(7.dp))
+            Text("3.0  ·  DIGITAL ASSET TERMINAL", color = Muted, fontSize = 10.sp, letterSpacing = 2.sp)
+            Spacer(Modifier.height(28.dp))
+            LinearProgressIndicator(
+                modifier = Modifier.width(116.dp).height(2.dp),
+                color = Gold, trackColor = Panel2
+            )
+            Spacer(Modifier.height(12.dp))
+            Text("INITIALIZING INTERFACE", color = Muted, fontSize = 9.sp, letterSpacing = 1.6.sp)
+        }
     }
 }
 
@@ -100,7 +156,7 @@ fun YhccApp() {
                         val values = if (sp == null) emptyList() else (0 until sp.length()).map { sp.optDouble(it) }.filter { it.isFinite() }
                         Coin(
                             o.optString("id"), o.optString("symbol").uppercase(), o.optString("name"),
-                            o.optDouble("current_price"), o.optDouble("price_change_percentage_24h"),
+                            o.optDouble("current_price"), o.optDouble("price_change_percentage_24h_in_currency"),
                             values.takeLast(48)
                         )
                     }

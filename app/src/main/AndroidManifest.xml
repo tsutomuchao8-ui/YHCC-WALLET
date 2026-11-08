@@ -2,8 +2,10 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:allowBackup="false"
-        android:label="YHCC WALLET"
-        android:theme="@android:style/Theme.Material.Light.NoActionBar"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="YHCC WALLET 3.0"
+        android:theme="@style/YhccTheme"
         android:supportsRtl="true">
         <activity
             android:name=".MainActivity"
