@@ -1,4 +1,5 @@
 package com.yhcc.wallet
+import androidx.compose.foundation.Canvas
 
 import android.graphics.Bitmap
 import android.os.Bundle
